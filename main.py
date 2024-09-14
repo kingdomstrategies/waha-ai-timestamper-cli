@@ -8,6 +8,8 @@ from model import load_model
 from timestamp_types import File
 from utils import align_matches, match_files
 
+mms_languages = json.load(open("mms_languages.json"))
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "-i",
@@ -24,8 +26,15 @@ parser.add_argument(
 parser.add_argument(
     "-s",
     "--separator",
-    help="The location to timestamp within a text file.",
+    help="The location to timestamp within a text file. Options are `lineBreak`, `leftBracket` ([), or `downArrow` (⬇️).",
     default="lineBreak",
+)
+parser.add_argument(
+    "-l",
+    "--language",
+    help="The language of the text and audio files. If one isn't provided, the app will automatically detect the language using MMS's lid api.",
+    default=None,
+    type=str,
 )
 
 
@@ -34,6 +43,17 @@ def main():
     folder = args.input
     output = args.output
     separator = args.separator
+    language = args.language
+
+    if language is not None:
+        # Check if language is valid.
+        language_match = next(
+            (item for item in mms_languages if item["iso"] == language), None
+        )
+
+        if language_match is None or not language_match["align"]:
+            print(f"Invalid language detected.")
+            exit(0)
 
     model, dictionary = load_model()
 
@@ -58,7 +78,9 @@ def main():
     for match in matched_files:
         if match[0] is None or match[1] is None:
             continue
-    timestamps = align_matches(folder, separator, matched_files, model, dictionary)
+    timestamps = align_matches(
+        folder, language, separator, matched_files, model, dictionary
+    )
     json.dump(timestamps, open(output, "w"))
 
 

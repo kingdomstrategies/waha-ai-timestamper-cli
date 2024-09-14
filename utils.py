@@ -55,6 +55,7 @@ def match_files(
 
 def align_matches(
     folder: str,
+    language: str | None,
     separator: str,
     matches: list[Match],
     model: Any,
@@ -69,7 +70,6 @@ def align_matches(
 
     progress = 0
     total_length = 0
-    language = "eng"
 
     for index, match in enumerate(matches):
         if match[0] is None or match[1] is None:
@@ -98,7 +98,7 @@ def align_matches(
             # Identify the session language. This is time
             # consuming so we only do it for the first file and assume
             # all files are the same language.
-            if index == 0:
+            if index == 0 and language is None:
                 # Cut down audio to 10 seconds for language
                 # identification.
                 spinner.text = "Identifying language..."
