@@ -190,7 +190,10 @@ def align_matches(
                     lines_to_timestamp.append(cleaned_verse)
 
             norm_lines_to_timestamp = [
-                text_normalize(line.strip(), language) for line in lines_to_timestamp
+                text_normalize(
+                    line.strip(), language if language is not None else "eng"
+                )
+                for line in lines_to_timestamp
             ]
             uroman_lines_to_timestamp = get_uroman_tokens(
                 norm_lines_to_timestamp, language

@@ -23,7 +23,7 @@ def load_audio(file_path: str):
 
 
 # Function to identify the language of an audio file
-def identify_language(audio_path: str):
+def identify_language(audio_path: str) -> str:
     waveform, sample_rate = load_audio(audio_path)
 
     # Process the waveform to match the input expected by the model
