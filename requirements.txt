@@ -1,0 +1,12 @@
+sox
+torch
+torchaudio
+flask
+gunicorn
+uroman
+firebase-admin
+ffmpeg-python
+halo
+omegaconf
+hydra-core
+transformers[torch]
