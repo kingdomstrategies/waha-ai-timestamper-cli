@@ -14,17 +14,16 @@ While an Mac M1 Pro could timestamp a 10 minute audio file in about 2.5 minutes,
 We used [Google Compute](https://cloud.google.com/compute/docs/gpus) GPUs and [LambaLabs](https://lambdalabs.com/) to run inference.
 
 
-
 ## Installation:
 
-Installation is fairly strait-forward. Simply:
+Installation is fairly straight-forward. Simply:
 
 1. Clone the repository.
 2. Install the required Python libraries:
 
-    ```sh
-    pip install -r requirement
-    ```
+```sh
+pip install -r requirement
+```
 3. You're ready to go!
 
 
@@ -53,13 +52,16 @@ $ tree .
 └── GEN.5.txt
 ```
 
-## Usage
 
+\
 You can run the CLI tool with the following arguments:
 
 ```sh
-python cli_tool.py -i <input_folder> -o <output_file> [-s <separator>] [-l <language>]
+python cli_tool.py -i <input_folder> -o <output_file>.json [-s <separator>] [-l <language>]
 ```
+
+The script will output a single JSON file with an object for each audio-text file-pair.
+
 
 ### Arguments
 
