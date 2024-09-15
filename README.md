@@ -1,5 +1,7 @@
 # TimestampAudio CLI by Waha
 
+![TimestampAudio.com Logo](./logo.svg "TimestampAudio.com Logo")
+
 [TimeStampAudio](https://timestampaudio.com) generates timing data from any audio and corresponding text file combination, in the over [1,100 languages](https://dl.fbaipublicfiles.com/mms/misc/language_coverage_mms.html) supported by [Meta's MMS ASR model](https://ai.meta.com/blog/multilingual-model-speech-recognition/), outputting the results in JSON.
 
 
