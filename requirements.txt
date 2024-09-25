@@ -11,3 +11,4 @@ torch
 torchaudio
 transformers[torch]
 uroman
+python-dotenv

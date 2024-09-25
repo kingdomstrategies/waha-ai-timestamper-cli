@@ -74,7 +74,6 @@ def align_matches(
     for index, match in enumerate(matches):
         if match[0] is None or match[1] is None:
             continue
-
         try:
             audio_path = match[0][1]
             audio_type = match[0][0].split(".")[-1]
@@ -136,7 +135,12 @@ def align_matches(
             text_file = open(text_path, "r", encoding="utf-8")
             lines_to_timestamp = []
 
-            if text_extension == "txt":
+            if text_extension == "json":
+                verses = json.load(text_file)
+                for verse in verses:
+                    lines_to_timestamp.append(verse["text"])
+
+            elif text_extension == "txt":
                 # Read the separator from the query parameter and adjust
                 # it so it can be used in the split function.
                 if separator == "lineBreak":
