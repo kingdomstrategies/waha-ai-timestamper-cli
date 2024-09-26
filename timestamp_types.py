@@ -11,10 +11,9 @@ class Section(TypedDict):
     A single section of a match with timestamp data.
     """
 
-    begin: float
-    end: float
-    begin_str: str
-    end_str: str
+    verse_id: str
+    timings: tuple[float, float]
+    timings_str: tuple[str, str]
     text: str
     uroman_tokens: str
 
@@ -54,3 +53,8 @@ class SessionDoc(TypedDict):
     sessionId: str
     status: Status
     timestamps: FileTimestamps | None
+
+
+class Verse(TypedDict):
+    verse_id: str
+    text: str

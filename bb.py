@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import urllib.request
-from typing import Any, TypedDict
 
 from dotenv import load_dotenv
 from halo import Halo
@@ -13,21 +12,21 @@ from utils import align_matches
 
 load_dotenv()
 
-bible_chapters = json.load(open("bible_chapters.json"))
+bible_chapters = json.load(open("bible_chapters.json", encoding="utf-8"))
 
-mms_languages = json.load(open("mms_languages.json"))
+mms_languages = json.load(open("mms_languages.json", encoding="utf-8"))
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "-t",
     "--text-id",
-    help="The id for the dbl text translation to use.",
+    help="The id for the bb text translation to use.",
     required=True,
 )
 parser.add_argument(
     "-a",
     "--audio-id",
-    help="The id for the dbl audio translation to use.",
+    help="The id for the bb audio translation to use.",
     required=True,
 )
 parser.add_argument(
@@ -45,85 +44,54 @@ parser.add_argument(
 )
 
 
-def add_dbl_text(verses: list[Verse], item: Any):
-    """API.Bible-specific function to add text to the chapter object."""
-
-    if "attrs" in item and "verseId" in item["attrs"]:
-        verse_id: str = item["attrs"]["verseId"]
-
-        existing_element: Verse | None = None
-
-        for verse in verses:
-            if verse["verse_id"] == verse_id:
-                existing_element = verse
-
-        if existing_element is not None:
-            existing_element["text"] += item["text"]
-        else:
-            verses.append(
-                {
-                    "verse_id": verse_id,
-                    "text": item["text"],
-                }
-            )
-
-
 def get_chapter(
-    folder: str, text_translation_id: str, audio_translation_id: str, chapter_id: str
+    folder: str, bb_text_id: str, bb_audio_id: str, chapter_id: str
 ) -> tuple[File, File]:
     spinner = Halo("Fetching text...").start()
+    book, chapter = chapter_id.split(".")
 
     if not os.path.exists(f"{folder}/{chapter_id}.json"):
-
         req = urllib.request.Request(
-            "https://api.scripture.api.bible/v1"
-            f"/bibles/{text_translation_id}"
-            f"/chapters/{chapter_id}"
-            "?content-type=json&include-notes=false&include-titles=true"
-            "&include-chapter-numbers=false&include-verse-numbers=true"
-            "&include-verse-spans=false"
+            f"https://4.dbt.io/api/download/{bb_text_id}/{book}/{chapter}?&v=4&key={os.getenv('BIBLE_BRAIN_API_KEY', '')}"
         )
-        req.add_header("api-key", os.getenv("API_BIBLE_KEY", ""))
         resp = urllib.request.urlopen(req).read()
         json_response = json.loads(resp.decode("utf-8"))
+
+        for verse in json_response["data"]:
+            verse_id = f"{book}.{chapter}.{verse['verse_start']}"
+            if verse["verse_start"] != verse["verse_end"]:
+                verse_id += f"-{book}.{chapter}.{verse['verse_end']}"
 
         # TEXT
 
         verses: list[Verse] = []
 
-        # Iterate through reponse and add all text to an object.
-        for verse_chunk in json_response["data"]["content"]:
-            for item1 in verse_chunk["items"]:
-                if "items" in item1:
-                    for item2 in item1["items"]:
-                        if "items" in item2:
-                            for item3 in item2["items"]:
-                                add_dbl_text(verses, item3)
-                        else:
-                            add_dbl_text(verses, item2)
-                else:
-                    add_dbl_text(verses, item1)
+        for verse in json_response["data"]:
+            verse_id = f"{book}.{chapter}.{verse['verse_start']}"
+            if verse["verse_start"] != verse["verse_end"]:
+                verse_id += f"-{book}.{chapter}.{verse['verse_end']}"
 
-        json.dump(verses, open(f"{folder}/{chapter_id}.json", "w"))
+            verses.append(
+                {
+                    "verse_id": verse_id,
+                    "text": verse["verse_text"],
+                }
+            )
+
+        json.dump(verses, open(f"{folder}/{chapter_id}.json", "w", encoding="utf-8"))
 
     # AUDIO
 
     spinner.text = "Fetching audio..."
 
     if not os.path.exists(f"{folder}/{chapter_id}.mp3"):
-        fetch_url = (
-            "https://api.scripture.api.bible/v1"
-            f"/audio-bibles/{audio_translation_id}"
-            f"/chapters/{chapter_id}"
-        )
+        fetch_url = f"https://4.dbt.io/api/download/{bb_audio_id}/{book}/{chapter}?&v=4&key={os.getenv('BIBLE_BRAIN_API_KEY', '')}"
 
         req = urllib.request.Request(fetch_url)
-        req.add_header("api-key", os.getenv("API_BIBLE_KEY", ""))
         resp = urllib.request.urlopen(req).read()
         json_response = json.loads(resp.decode("utf-8"))
-
         urllib.request.urlretrieve(
-            json_response["data"]["resourceUrl"],
+            json_response["data"][0]["path"],
             f"{folder}/{chapter_id}.mp3",
         )
 
@@ -149,7 +117,7 @@ def main():
         )
 
         if language_match is None or not language_match["align"]:
-            print(f"Invalid language detected.")
+            print("Invalid language detected.")
             exit(0)
 
     model, dictionary = load_model()
@@ -157,7 +125,7 @@ def main():
     matched_files = []
 
     for chapter in bible_chapters:
-        if chapter != "GEN.2":
+        if "MAT.28" not in chapter:
             continue
         matched_files.append(get_chapter(folder, args.text_id, args.audio_id, chapter))
 
@@ -175,7 +143,10 @@ def main():
         exit(0)
 
     for chapter in timestamps:
-        json.dump(chapter, open(f"{output}/{chapter['text_file']}", "w"))
+        json.dump(
+            chapter["sections"],
+            open(f"{output}/{chapter['text_file']}", "w", encoding="utf-8"),
+        )
 
 
 main()
