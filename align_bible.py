@@ -1,11 +1,19 @@
 import argparse
 import json
 import os
+from typing import Literal
 
 from halo import Halo
 
-from bibles import get_bb_audio, get_bb_text, get_chapter_info, get_timings
-from constants import bb_translations, bible_chapters, mms_languages
+from bibles import (
+    get_bb_audio,
+    get_bb_text,
+    get_chapter_info,
+    get_dbl_audio,
+    get_dbl_text,
+    get_timings,
+)
+from constants import bible_chapters, mms_languages, translations
 from model import load_model
 from timestamp_types import ChapterInfo, ChapterText
 
@@ -26,21 +34,26 @@ parser.add_argument(
 )
 
 
-def get_audio(chapter_info: ChapterInfo, bb_id: str):
+def get_audio(chapter_info: ChapterInfo, source: Literal["bb", "dbl"], b_id: str):
     spinner = Halo()
     if os.path.exists(chapter_info["paths"]["audio"]):
         spinner.info(f"({chapter_info['chapter_id']}) Audio already exists. Skipping.")
         return
 
-    get_bb_audio(
-        bb_id, chapter_info["chapter_id"], output=chapter_info["paths"]["audio"]
-    )
+    if source == "bb":
+        get_bb_audio(
+            b_id, chapter_info["chapter_id"], output=chapter_info["paths"]["audio"]
+        )
+    elif source == "dbl":
+        get_dbl_audio(
+            b_id, chapter_info["chapter_id"], output=chapter_info["paths"]["audio"]
+        )
+    else:
+        print("Invalid source")
+        exit(0)
 
 
-def get_text(
-    chapter_info: ChapterInfo,
-    bb_id: str,
-):
+def get_text(chapter_info: ChapterInfo, source: Literal["bb", "dbl"], b_id: str):
     spinner = Halo()
 
     if (
@@ -55,19 +68,30 @@ def get_text(
 
     # Start with an empty chapter text object that we will fill in.
     chapter_text: ChapterText = {
-        "translationId": bb_id,
+        "translationId": b_id,
         "bookName": "",
         "chapterId": chapter_info["chapter_id"],
         "reference": "",
         "verses": [],
     }
 
-    get_bb_text(
-        bb_id,
-        chapter_info["chapter_id"],
-        chapter_text,
-        output=chapter_info["paths"]["text"],
-    )
+    if source == "bb":
+        get_bb_text(
+            b_id,
+            chapter_info["chapter_id"],
+            chapter_text,
+            output=chapter_info["paths"]["text"],
+        )
+    elif source == "dbl":
+        get_dbl_text(
+            b_id,
+            chapter_info["chapter_id"],
+            chapter_text,
+            output=chapter_info["paths"]["text"],
+        )
+    else:
+        print("Invalid source")
+        exit(0)
 
 
 def main():
@@ -85,13 +109,13 @@ def main():
         if language_match is None or not language_match["align"]:
             print("Provided language is not supported by mms.")
             exit(0)
-    # find element in bb_languages array where language_id is equal to language
-    bb_match = next(
-        (item for item in bb_translations if item["languageId"] == language), None
+
+    b_match = next(
+        (item for item in translations if item["languageId"] == language), None
     )
 
-    if bb_match is None:
-        print("Translation not added to bb_translations.json.")
+    if b_match is None:
+        print("Translation not added to translations.json.")
         exit(0)
 
     model, dictionary = load_model()
@@ -99,15 +123,15 @@ def main():
     for chapter_id in bible_chapters:
         chapter_info = get_chapter_info(chapter_id, output)
 
-        bb_ids = bb_match["nt"] if chapter_info["testament"] == "nt" else bb_match["ot"]
-        if bb_ids is None:
+        b_ids = b_match["nt"] if chapter_info["testament"] == "nt" else b_match["ot"]
+        if b_ids is None:
             continue
 
         os.makedirs(chapter_info["paths"]["book"], exist_ok=True)
 
-        get_audio(chapter_info, bb_ids["audio"])
+        get_audio(chapter_info, b_match["source"], b_ids["audio"])
 
-        get_text(chapter_info, bb_ids["text"])
+        get_text(chapter_info, b_match["source"], b_ids["text"])
 
         get_timings(language, chapter_info, model, dictionary)
 

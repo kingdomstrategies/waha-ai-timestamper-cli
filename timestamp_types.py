@@ -90,18 +90,19 @@ class ChapterInfo(TypedDict):
     paths: ChapterPaths
 
 
-class BbIds(TypedDict):
+class TranslationIds(TypedDict):
     audio: str
     text: str
 
 
-class BbTranslation(TypedDict):
+class Translation(TypedDict):
+    source: Literal["bb", "dbl"]
     languageId: str
     languageName: str
     translationId: str
     translationName: str
-    ot: BbIds | None
-    nt: BbIds | None
+    ot: TranslationIds | None
+    nt: TranslationIds | None
 
 
 class MmsLanguage(TypedDict):
