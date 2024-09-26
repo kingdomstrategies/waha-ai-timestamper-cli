@@ -1,0 +1,27 @@
+[
+  {
+    "languageId": "npi",
+    "languageName": "Nepali",
+    "nt": {
+      "audio": "NPIDPIN1DA",
+      "text": "NPIDPIN_ET"
+    },
+    "ot": null,
+    "translationId": "NPIULB",
+    "translationName": "Nepali (Unlocked Literal Bible)"
+  },
+  {
+    "languageId": "urd",
+    "languageName": "Urdu",
+    "nt": {
+      "audio": "URDIRVN1DA",
+      "text": "URDIRV"
+    },
+    "ot": {
+      "audio": "URDIRVO1DA",
+      "text": "URDIRV"
+    },
+    "translationId": "URDIRV",
+    "translationName": "Urdu (Indian revised version)"
+  }
+]

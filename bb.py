@@ -1,114 +1,80 @@
 import argparse
 import json
 import os
-import urllib.request
 
-from dotenv import load_dotenv
 from halo import Halo
 
+from bibles import get_bb_audio, get_bb_text, get_chapter_info, get_timings
+from constants import bb_translations, bible_chapters, mms_languages
 from model import load_model
-from timestamp_types import File, Verse
-from utils import align_matches
-
-load_dotenv()
-
-bible_chapters = json.load(open("bible_chapters.json", encoding="utf-8"))
-
-mms_languages = json.load(open("mms_languages.json", encoding="utf-8"))
+from timestamp_types import ChapterInfo, ChapterText
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-t",
-    "--text-id",
-    help="The id for the bb text translation to use.",
-    required=True,
-)
-parser.add_argument(
-    "-a",
-    "--audio-id",
-    help="The id for the bb audio translation to use.",
-    required=True,
-)
+
 parser.add_argument(
     "-o",
     "--output",
-    help="The path to a folder to write json files to.",
+    help="The path to a folder to write chapter json files to.",
     required=True,
 )
 parser.add_argument(
     "-l",
     "--language",
-    help="The language of the text and audio files. If one isn't provided, the app will automatically detect the language using MMS's lid api.",
-    default=None,
+    help="The mms language id of the bible.",
+    required=True,
     type=str,
 )
 
 
-def get_chapter(
-    folder: str, bb_text_id: str, bb_audio_id: str, chapter_id: str
-) -> tuple[File, File]:
-    spinner = Halo("Fetching text...").start()
-    book, chapter = chapter_id.split(".")
+def get_audio(chapter_info: ChapterInfo, bb_id: str):
+    spinner = Halo()
+    if os.path.exists(chapter_info["paths"]["audio"]):
+        spinner.info(f"({chapter_info['chapter_id']}) Audio already exists. Skipping.")
+        return
 
-    if not os.path.exists(f"{folder}/{chapter_id}.json"):
-        req = urllib.request.Request(
-            f"https://4.dbt.io/api/download/{bb_text_id}/{book}/{chapter}?&v=4&key={os.getenv('BIBLE_BRAIN_API_KEY', '')}"
+    get_bb_audio(
+        bb_id, chapter_info["chapter_id"], output=chapter_info["paths"]["audio"]
+    )
+
+
+def get_text(
+    chapter_info: ChapterInfo,
+    bb_id: str,
+):
+    spinner = Halo()
+
+    if (
+        os.path.exists(chapter_info["paths"]["text"])
+        and len(
+            json.load(open(chapter_info["paths"]["text"], encoding="utf-8"))["verses"]
         )
-        resp = urllib.request.urlopen(req).read()
-        json_response = json.loads(resp.decode("utf-8"))
+        > 0
+    ):
+        spinner.info(f"({chapter_info['chapter_id']}) Text already exists. Skipping.")
+        return
 
-        for verse in json_response["data"]:
-            verse_id = f"{book}.{chapter}.{verse['verse_start']}"
-            if verse["verse_start"] != verse["verse_end"]:
-                verse_id += f"-{book}.{chapter}.{verse['verse_end']}"
+    # Start with an empty chapter text object that we will fill in.
+    chapter_text: ChapterText = {
+        "translationId": bb_id,
+        "bookName": "",
+        "chapterId": chapter_info["chapter_id"],
+        "reference": "",
+        "verses": [],
+    }
 
-        # TEXT
-
-        verses: list[Verse] = []
-
-        for verse in json_response["data"]:
-            verse_id = f"{book}.{chapter}.{verse['verse_start']}"
-            if verse["verse_start"] != verse["verse_end"]:
-                verse_id += f"-{book}.{chapter}.{verse['verse_end']}"
-
-            verses.append(
-                {
-                    "verse_id": verse_id,
-                    "text": verse["verse_text"],
-                }
-            )
-
-        json.dump(verses, open(f"{folder}/{chapter_id}.json", "w", encoding="utf-8"))
-
-    # AUDIO
-
-    spinner.text = "Fetching audio..."
-
-    if not os.path.exists(f"{folder}/{chapter_id}.mp3"):
-        fetch_url = f"https://4.dbt.io/api/download/{bb_audio_id}/{book}/{chapter}?&v=4&key={os.getenv('BIBLE_BRAIN_API_KEY', '')}"
-
-        req = urllib.request.Request(fetch_url)
-        resp = urllib.request.urlopen(req).read()
-        json_response = json.loads(resp.decode("utf-8"))
-        urllib.request.urlretrieve(
-            json_response["data"][0]["path"],
-            f"{folder}/{chapter_id}.mp3",
-        )
-
-    spinner.succeed(f"Finished fetching {chapter_id}.")
-    return (
-        f"{chapter_id}.mp3",
-        f"{folder}/{chapter_id}.mp3",
-    ), (f"{chapter_id}.json", f"{folder}/{chapter_id}.json")
+    get_bb_text(
+        bb_id,
+        chapter_info["chapter_id"],
+        chapter_text,
+        output=chapter_info["paths"]["text"],
+    )
 
 
 def main():
     args = parser.parse_args()
-    folder = f"/tmp/{args.text_id}"
-    os.makedirs(folder, exist_ok=True)
+    language = args.language
     output = args.output
     os.makedirs(output, exist_ok=True)
-    language = args.language
 
     if language is not None:
         # Check if language is valid.
@@ -117,36 +83,33 @@ def main():
         )
 
         if language_match is None or not language_match["align"]:
-            print("Invalid language detected.")
+            print("Provided language is not supported by mms.")
             exit(0)
+    # find element in bb_languages array where language_id is equal to language
+    bb_match = next(
+        (item for item in bb_translations if item["languageId"] == language), None
+    )
+
+    if bb_match is None:
+        print("Translation not added to bb_translations.json.")
+        exit(0)
 
     model, dictionary = load_model()
 
-    matched_files = []
+    for chapter_id in bible_chapters:
+        chapter_info = get_chapter_info(chapter_id, output)
 
-    for chapter in bible_chapters:
-        if "MAT.28" not in chapter:
+        bb_ids = bb_match["nt"] if chapter_info["testament"] == "nt" else bb_match["ot"]
+        if bb_ids is None:
             continue
-        matched_files.append(get_chapter(folder, args.text_id, args.audio_id, chapter))
 
-    timestamps = align_matches(
-        folder,
-        language,
-        "",
-        matched_files,
-        model,
-        dictionary,
-    )
+        os.makedirs(chapter_info["paths"]["book"], exist_ok=True)
 
-    if timestamps is None:
-        print("Failed to align timestamps.")
-        exit(0)
+        get_audio(chapter_info, bb_ids["audio"])
 
-    for chapter in timestamps:
-        json.dump(
-            chapter["sections"],
-            open(f"{output}/{chapter['text_file']}", "w", encoding="utf-8"),
-        )
+        get_text(chapter_info, bb_ids["text"])
+
+        get_timings(language, chapter_info, model, dictionary)
 
 
 main()

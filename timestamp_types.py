@@ -3,7 +3,7 @@ Types for the timestamping service.
 """
 
 from enum import Enum
-from typing import TypedDict
+from typing import Literal, NotRequired, Optional, TypedDict
 
 
 class Section(TypedDict):
@@ -56,5 +56,57 @@ class SessionDoc(TypedDict):
 
 
 class Verse(TypedDict):
-    verse_id: str
     text: str
+    timings: NotRequired[Optional[tuple[float, float]]]
+    timings_str: NotRequired[Optional[tuple[str, str]]]
+    uroman: NotRequired[Optional[str]]
+    verseId: str
+
+
+class ChapterText(TypedDict):
+    bookName: str
+    chapterId: str
+    reference: str
+    translationId: str
+    """
+  An id used to represent a bible translation. The standard abbreviation for a translation should be used if there is one.
+  """
+    verses: list[Verse]
+
+
+class ChapterPaths(TypedDict):
+    book: str
+    audio: str
+    text: str
+
+
+class ChapterInfo(TypedDict):
+    """An object to store a bunch of useful information about a specific bible chapter in a specific scripture translation."""
+
+    chapter_id: str
+    book_id: str
+    chapter_number: str
+    testament: Literal["ot", "nt"]
+    paths: ChapterPaths
+
+
+class BbIds(TypedDict):
+    audio: str
+    text: str
+
+
+class BbTranslation(TypedDict):
+    languageId: str
+    languageName: str
+    translationId: str
+    translationName: str
+    ot: BbIds | None
+    nt: BbIds | None
+
+
+class MmsLanguage(TypedDict):
+    align: bool
+    iso: str
+    name: str
+    identify: bool
+    tts: bool
