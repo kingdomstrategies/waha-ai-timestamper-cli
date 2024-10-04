@@ -24,7 +24,8 @@ Installation is fairly straight-forward. Simply:
 ```sh
 pip install -r requirement
 ```
-3. You're ready to go!
+3. Install `ffmpeg` and `sox` using your preferred method, e.g. `brew install ffmpeg sox`.
+4. You're ready to go!
 
 
 ## Usage:
