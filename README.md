@@ -59,7 +59,7 @@ $ tree .
 You can run the CLI tool with the following arguments:
 
 ```sh
-python cli_tool.py -i <input_folder> -o <output_file>.json [-s <separator>] [-l <language>]
+python main.py -i <input_folder> -o <output_file>.json [-s <separator>] [-l <language>]
 ```
 
 The script will output a single JSON file with an object for each audio-text file-pair.
@@ -75,5 +75,5 @@ The script will output a single JSON file with an object for each audio-text fil
 ## Example
 
 ```sh
-python cli_tool.py -i ./data -o timestamps.json -s lineBreak -l en
+python main.py -i ./data -o timestamps.json -s lineBreak -l en
 ```
