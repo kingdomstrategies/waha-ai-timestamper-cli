@@ -77,7 +77,7 @@ def align_matches(
         try:
             audio_path = match[0][1]
             audio_type = match[0][0].split(".")[-1]
-
+            chapter_id = ".".join(match[0][0].split(".")[0:-1])
             wav_output = audio_path.replace(f".{audio_type}", "_output.wav")
 
             spinner.text = f"Converting audio to {wav_output}..."
@@ -222,20 +222,23 @@ def align_matches(
             sections = []
 
             for i, t in enumerate(lines_to_timestamp):
+                if i == 0:
+                    continue
+
                 span = spans[i]
                 seg_start_idx = span[0].start
                 seg_end_idx = span[-1].end
 
-                audio_start_sec = seg_start_idx * stride / 1000
-                audio_end_sec = seg_end_idx * stride / 1000
+                audio_start_sec = round(seg_start_idx * stride / 1000, 2)
+                audio_end_sec = round(seg_end_idx * stride / 1000, 2)
 
                 section: Section = {
-                    "begin": audio_start_sec,
-                    "end": audio_end_sec,
-                    "begin_str": time.strftime(
-                        "%H:%M:%S", time.gmtime(audio_start_sec)
+                    "verse_id": f"{chapter_id}.{i}",
+                    "timings": (audio_start_sec, audio_end_sec),
+                    "timings_str": (
+                        time.strftime("%H:%M:%S", time.gmtime(audio_start_sec)),
+                        time.strftime("%H:%M:%S", time.gmtime(audio_end_sec)),
                     ),
-                    "end_str": time.strftime("%H:%M:%S", time.gmtime(audio_end_sec)),
                     "text": t,
                     "uroman_tokens": uroman_lines_to_timestamp[i],
                 }

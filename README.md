@@ -13,8 +13,6 @@ However, the MMS model works most efficiently with a CUDA enabled GPU.
 
 While an Mac M1 Pro could timestamp a 10 minute audio file in about 2.5 minutes, that same file could be timestamped in _just a few seconds_ when processed with a GPU.
 
-We used [Google Compute](https://cloud.google.com/compute/docs/gpus) GPUs and [LambaLabs](https://lambdalabs.com/) to run inference.
-
 
 ## Installation:
 
@@ -26,7 +24,8 @@ Installation is fairly straight-forward. Simply:
 ```sh
 pip install -r requirement
 ```
-3. You're ready to go!
+3. Install `ffmpeg` and `sox` using your preferred method, e.g. `brew install ffmpeg sox`.
+4. You're ready to go!
 
 
 ## Usage:

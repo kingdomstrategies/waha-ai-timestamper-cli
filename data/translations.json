@@ -1,0 +1,44 @@
+[
+  {
+    "languageId": "npi",
+    "languageName": "Nepali",
+    "nt": {
+      "audio": "NPIDPIN1DA",
+      "text": "NPIDPIN_ET"
+    },
+    "ot": null,
+    "source": "bb",
+    "translationId": "NPIULB",
+    "translationName": "Nepali (Unlocked Literal Bible)"
+  },
+  {
+    "languageId": "urd",
+    "languageName": "Urdu",
+    "nt": {
+      "audio": "URDIRVN1DA",
+      "text": "URDIRV"
+    },
+    "ot": {
+      "audio": "URDIRVO1DA",
+      "text": "URDIRV"
+    },
+    "source": "bb",
+    "translationId": "URDIRV",
+    "translationName": "Urdu (Indian revised version)"
+  },
+  {
+    "languageId": "jpn",
+    "languageName": "Japanese",
+    "nt": {
+      "audio": "bbeb5dd5380e0873-01",
+      "text": "8676091b758f0d8d-01"
+    },
+    "ot": {
+      "audio": "bbeb5dd5380e0873-01",
+      "text": "8676091b758f0d8d-01"
+    },
+    "source": "dbl",
+    "translationId": "JCB",
+    "translationName": "Japanese Contemporary Bible"
+  }
+]
