@@ -150,7 +150,8 @@ def align_matches(
                 elif separator == "downArrow":
                     separator = "⬇️"
 
-                lines_to_timestamp = text_file.read().split(separator)
+                lines_to_timestamp = text_file.read().strip(separator).split(separator)
+                lines_to_timestamp = [line for line in lines_to_timestamp if line.strip()]
             elif text_extension == "usfm":
                 # Define the tags to ignore
                 ignore_tags = [
