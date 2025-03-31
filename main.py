@@ -8,7 +8,7 @@ from model import load_model
 from timestamp_types import File
 from utils import align_matches, match_files
 
-mms_languages = json.load(open("mms_languages.json"))
+mms_languages = json.load(open("data/mms_languages.json"))
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
