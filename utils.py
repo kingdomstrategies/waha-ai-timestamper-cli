@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import re
 import time
@@ -9,7 +10,7 @@ import ffmpeg
 from halo import Halo
 
 from lid import identify_language
-from mms.align_utils import get_alignments, get_spans, get_uroman_tokens
+from mms.align_utils import get_alignments, get_spans, get_uroman_tokens, trim_silence_edges
 from mms.text_normalization import text_normalize
 from timestamp_types import File, FileTimestamps, Match, Section
 
@@ -211,6 +212,8 @@ def align_matches(
             spinner.text = "Aligning..."
             spinner.start()
 
+            # segments: List of Segments (character level timing objects)
+            # stride: ms per frame
             segments, stride = get_alignments(
                 wav_output,
                 uroman_lines_to_timestamp,
@@ -218,7 +221,10 @@ def align_matches(
                 dictionary,
             )
 
-            spans = get_spans(uroman_lines_to_timestamp, segments)
+            max_silence_padding_ms = 500
+            max_silence_padding_frames = round(max_silence_padding_ms / stride)
+            spinner.info(f"max_silence_padding_frames: {max_silence_padding_frames}")
+            spans = get_spans(uroman_lines_to_timestamp, segments, max_silence_padding_frames)
 
             sections = []
 
@@ -227,6 +233,7 @@ def align_matches(
                     continue
 
                 span = spans[i]
+                # span = trim_silence_edges(span, 25)
                 seg_start_idx = span[0].start
                 seg_end_idx = span[-1].end
 

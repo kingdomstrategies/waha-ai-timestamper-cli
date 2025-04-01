@@ -95,8 +95,8 @@ def get_uroman_tokens(norm_transcripts: List[str], iso: Union[str, None] = None)
 @dataclass
 class Segment:
     label: str
-    start: int
-    end: int
+    start: int # start frame
+    end: int # end frame
 
     def __repr__(self):
         return f"{self.label}: [{self.start:5d}, {self.end:5d})"
@@ -123,12 +123,44 @@ def time_to_frame(time: float):
     return int(time * frames_per_sec)
 
 
-def get_spans(tokens: List[str], segments: List[Segment]):
+def trim_silence_edges(span: List[Segment], silence_threshold: int):
+    """
+    Trim silence segments from the start and end of a span if they are longer than the specified threshold.
+    
+    Args:
+        span: List of Segments to trim
+        silence_threshold: Duration threshold (in frames) above which blank segments will be trimmed
+        
+    Returns:
+        List[Segment]: Trimmed span
+    """
+    # Return early if span is empty
+    if not span:
+        return span
+        
+    # Trim from start
+    while span and span[0].label == "<blank>" and span[0].length > silence_threshold:
+        span = span[1:]
+        
+    # Trim from end
+    while span and span[-1].label == "<blank>" and span[-1].length > silence_threshold:
+        span = span[:-1]
+        
+    return span
+
+
+def get_spans(tokens: List[str], segments: List[Segment], max_silence_padding_frames: int = -1):
+    """
+    Given a list of tokens (text strings), get the spans that correspond to the tokens.
+        (each span is a List of Segments) 
+    """
     ltr_idx = 0
     tokens_idx = 0
     intervals = []
     start, end = (0, 0)
-    sil = "<blank>"
+    sil = "<blank>" # silence label
+
+    # Create intervals of segment indices that correspond to tokens
     for seg_idx, seg in enumerate(segments):
         if tokens_idx == len(tokens):
             assert seg_idx == len(segments) - 1
@@ -142,6 +174,7 @@ def get_spans(tokens: List[str], segments: List[Segment]):
         if (ltr_idx) == 0:
             start = seg_idx
         if ltr_idx == len(cur_token) - 1:
+            # Done with the current token
             ltr_idx = 0
             tokens_idx += 1
             intervals.append((start, seg_idx))
@@ -151,9 +184,14 @@ def get_spans(tokens: List[str], segments: List[Segment]):
         else:
             ltr_idx += 1
     spans: List[List[Segment]] = []
+
+    # Build spans from the intervals, adding silence padding to the start / end
+    # of each span. If max_silence_padding is set to a positive number, the 
+    # silence padding will be limited to the specified number of frames.
     for idx, (start, end) in enumerate(intervals):
         span = segments[start : end + 1]
         if start > 0:
+            # Add silence padding at the start of the span
             prev_seg = segments[start - 1]
             if prev_seg.label == sil:
                 pad_start = (
@@ -161,8 +199,12 @@ def get_spans(tokens: List[str], segments: List[Segment]):
                     if (idx == 0)
                     else int((prev_seg.start + prev_seg.end) / 2)
                 )
+                # Ensure the silence segment duration doesn't exceed max frames
+                if max_silence_padding_frames > -1:
+                    pad_start = max(pad_start, span[0].start - max_silence_padding_frames)
                 span = [Segment(sil, pad_start, span[0].start)] + span
         if end + 1 < len(segments):
+            # Add silence padding at the end of the span
             next_seg = segments[end + 1]
             if next_seg.label == sil:
                 pad_end = (
@@ -170,8 +212,13 @@ def get_spans(tokens: List[str], segments: List[Segment]):
                     if (idx == len(intervals) - 1)
                     else math.floor((next_seg.start + next_seg.end) / 2)
                 )
+                # Ensure the silence segment duration doesn't exceed max frames
+                if max_silence_padding_frames > -1:
+                    pad_end = min(pad_end, span[-1].end + max_silence_padding_frames)
                 span = span + [Segment(sil, span[-1].end, pad_end)]
         spans.append(span)
+
+    # done: return the spans
     return spans
 
 
