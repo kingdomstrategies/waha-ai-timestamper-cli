@@ -61,6 +61,7 @@ def align_matches(
     matches: list[Match],
     model: Any,
     dictionary: Any,
+    max_silence_padding_ms: int,
 ):
     """
     Align audio and text files and return a list of FileTimestamps.
@@ -221,9 +222,12 @@ def align_matches(
                 dictionary,
             )
 
-            max_silence_padding_ms = 500
-            max_silence_padding_frames = round(max_silence_padding_ms / stride)
-            spinner.info(f"max_silence_padding_frames: {max_silence_padding_frames}")
+            if max_silence_padding_ms >= 0:
+                max_silence_padding_frames = round(max_silence_padding_ms / stride)
+                spinner.info(f"Max Silence Padding: {max_silence_padding_ms}ms -> {max_silence_padding_frames} frames")
+            else:
+                max_silence_padding_frames = -1
+            
             spans = get_spans(uroman_lines_to_timestamp, segments, max_silence_padding_frames)
 
             sections = []
