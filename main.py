@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 
 from halo import Halo
 
@@ -26,15 +27,33 @@ parser.add_argument(
 parser.add_argument(
     "-s",
     "--separator",
-    help="The location to timestamp within a text file. Options are `lineBreak`, `leftBracket` ([), or `downArrow` (⬇️).",
+    help=(
+        "The location to timestamp within a text file. Options are `lineBreak`, "
+        "`leftBracket` ([), or `downArrow` (⬇️)."
+    ),
     default="lineBreak",
 )
 parser.add_argument(
     "-l",
     "--language",
-    help="The language of the text and audio files. If one isn't provided, the app will automatically detect the language using MMS's lid api.",
+    help=(
+        "The language of the text and audio files. If one isn't provided, the app "
+        "will automatically detect the language using MMS's lid api."
+    ),
     default=None,
     type=str,
+)
+parser.add_argument(
+    "-m",
+    "--max-silence-padding-ms",
+    help=(
+        "The maximum amount of silence padding (in ms) to offset the start and end "
+        "timestamps of each text span. Default is -1 (equally distribute silence). "
+        "0 will remove all silence. 500 (for example) will add up to 500ms of "
+        "silence to the start and end of each text span."
+    ),
+    default=-1,
+    type=int,
 )
 
 
@@ -44,6 +63,7 @@ def main():
     output = args.output
     separator = args.separator
     language = args.language
+    max_silence_padding_ms = args.max_silence_padding_ms
 
     if language is not None:
         # Check if language is valid.
@@ -78,10 +98,15 @@ def main():
     for match in matched_files:
         if match[0] is None or match[1] is None:
             continue
+    
+    start_time = time.time()
     timestamps = align_matches(
-        folder, language, separator, matched_files, model, dictionary
+        folder, language, separator, matched_files, model, dictionary, max_silence_padding_ms
     )
     json.dump(timestamps, open(output, "w"))
+    end_time = time.time()
+    
+    spinner.succeed(f"Done in {(end_time - start_time):.2f} seconds.")
 
 
 main()

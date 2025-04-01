@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import re
 import time
@@ -13,7 +14,7 @@ from mms.align_utils import get_alignments, get_spans, get_uroman_tokens
 from mms.text_normalization import text_normalize
 from timestamp_types import File, FileTimestamps, Match, Section
 
-mms_languages = json.load(open("mms_languages.json"))
+mms_languages = json.load(open("data/mms_languages.json"))
 
 
 def match_files(
@@ -60,9 +61,10 @@ def align_matches(
     matches: list[Match],
     model: Any,
     dictionary: Any,
+    max_silence_padding_ms: int,
 ):
     """
-    Align audio and text files and write output to Firestore.
+    Align audio and text files and return a list of FileTimestamps.
     """
     spinner = Halo("Aligning...").start()
 
@@ -211,6 +213,8 @@ def align_matches(
             spinner.text = "Aligning..."
             spinner.start()
 
+            # segments: List of Segments (character level timing objects)
+            # stride: ms per frame
             segments, stride = get_alignments(
                 wav_output,
                 uroman_lines_to_timestamp,
@@ -218,7 +222,13 @@ def align_matches(
                 dictionary,
             )
 
-            spans = get_spans(uroman_lines_to_timestamp, segments)
+            if max_silence_padding_ms >= 0:
+                max_silence_padding_frames = round(max_silence_padding_ms / stride)
+                spinner.info(f"Max Silence Padding: {max_silence_padding_ms}ms -> {max_silence_padding_frames} frames")
+            else:
+                max_silence_padding_frames = -1
+            
+            spans = get_spans(uroman_lines_to_timestamp, segments, max_silence_padding_frames)
 
             sections = []
 
