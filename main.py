@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 
 from halo import Halo
 
@@ -97,10 +98,15 @@ def main():
     for match in matched_files:
         if match[0] is None or match[1] is None:
             continue
+    
+    start_time = time.time()
     timestamps = align_matches(
         folder, language, separator, matched_files, model, dictionary, max_silence_padding_ms
     )
     json.dump(timestamps, open(output, "w"))
+    end_time = time.time()
+    
+    spinner.succeed(f"Done in {(end_time - start_time) * 1000:.2f} ms.")
 
 
 main()
