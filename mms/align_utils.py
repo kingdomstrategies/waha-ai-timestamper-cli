@@ -123,32 +123,6 @@ def time_to_frame(time: float):
     return int(time * frames_per_sec)
 
 
-def trim_silence_edges(span: List[Segment], silence_threshold: int):
-    """
-    Trim silence segments from the start and end of a span if they are longer than the specified threshold.
-    
-    Args:
-        span: List of Segments to trim
-        silence_threshold: Duration threshold (in frames) above which blank segments will be trimmed
-        
-    Returns:
-        List[Segment]: Trimmed span
-    """
-    # Return early if span is empty
-    if not span:
-        return span
-        
-    # Trim from start
-    while span and span[0].label == "<blank>" and span[0].length > silence_threshold:
-        span = span[1:]
-        
-    # Trim from end
-    while span and span[-1].label == "<blank>" and span[-1].length > silence_threshold:
-        span = span[:-1]
-        
-    return span
-
-
 def get_spans(tokens: List[str], segments: List[Segment], max_silence_padding_frames: int = -1):
     """
     Given a list of tokens (text strings), get the spans that correspond to the tokens.

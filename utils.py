@@ -10,7 +10,7 @@ import ffmpeg
 from halo import Halo
 
 from lid import identify_language
-from mms.align_utils import get_alignments, get_spans, get_uroman_tokens, trim_silence_edges
+from mms.align_utils import get_alignments, get_spans, get_uroman_tokens
 from mms.text_normalization import text_normalize
 from timestamp_types import File, FileTimestamps, Match, Section
 
@@ -233,7 +233,6 @@ def align_matches(
                     continue
 
                 span = spans[i]
-                # span = trim_silence_edges(span, 25)
                 seg_start_idx = span[0].start
                 seg_end_idx = span[-1].end
 
