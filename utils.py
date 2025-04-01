@@ -14,7 +14,7 @@ from mms.align_utils import get_alignments, get_spans, get_uroman_tokens
 from mms.text_normalization import text_normalize
 from timestamp_types import File, FileTimestamps, Match, Section
 
-mms_languages = json.load(open("mms_languages.json"))
+mms_languages = json.load(open("data/mms_languages.json"))
 
 
 def match_files(
