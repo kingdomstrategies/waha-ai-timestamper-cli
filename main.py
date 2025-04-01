@@ -106,7 +106,7 @@ def main():
     json.dump(timestamps, open(output, "w"))
     end_time = time.time()
     
-    spinner.succeed(f"Done in {(end_time - start_time) * 1000:.2f} ms.")
+    spinner.succeed(f"Done in {(end_time - start_time):.2f} seconds.")
 
 
 main()
