@@ -63,7 +63,7 @@ def align_matches(
     dictionary: Any,
 ):
     """
-    Align audio and text files and write output to Firestore.
+    Align audio and text files and return a list of FileTimestamps.
     """
     spinner = Halo("Aligning...").start()
 
