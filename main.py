@@ -21,7 +21,7 @@ parser.add_argument(
 parser.add_argument(
     "-o",
     "--output",
-    help="The path to a json file to write the timestamps to.",
+    help="The path to an output directory to write JSON and SRT files to.",
     required=True,
 )
 parser.add_argument(
@@ -60,10 +60,12 @@ parser.add_argument(
 def main():
     args = parser.parse_args()
     folder = args.input
-    output = args.output
+    output = args.output.rstrip('/') + '/'  # Ensure output ends with a slash
     separator = args.separator
     language = args.language
     max_silence_padding_ms = args.max_silence_padding_ms
+
+    perf_start_time = time.time()
 
     if language is not None:
         # Check if language is valid.
@@ -99,14 +101,42 @@ def main():
         if match[0] is None or match[1] is None:
             continue
     
-    start_time = time.time()
     timestamps = align_matches(
         folder, language, separator, matched_files, model, dictionary, max_silence_padding_ms
     )
-    json.dump(timestamps, open(output, "w"))
-    end_time = time.time()
     
-    spinner.succeed(f"Done in {(end_time - start_time):.2f} seconds.")
+    # Create output directory if it doesn't exist
+    os.makedirs(output, exist_ok=True)
+    
+    # Write each timestamp data item to a separate JSON and SRT file
+    for (text_file, audio_file), timestamp_data in zip(matched_files, timestamps):
+        if text_file is None or audio_file is None:
+            continue
+
+        # Create JSON file
+        base_name = os.path.splitext(text_file[0])[0]  # Use file_name from the tuple
+        output_file = os.path.join(output, f"{base_name}.json")
+        json.dump(timestamp_data, open(output_file, "w"))
+
+        # Create SRT file
+        srt_file = os.path.join(output, f"{base_name}.srt")
+        with open(srt_file, 'w') as f:
+            for i, section in enumerate(timestamp_data['sections'], 1):
+                start_time = section['timings'][0]
+                end_time = section['timings'][1]
+                
+                # Convert timestamps to SRT format (HH:MM:SS,mmm)
+                start_srt = time.strftime('%H:%M:%S,', time.gmtime(start_time)) + f"{int((start_time % 1) * 1000):03d}"
+                end_srt = time.strftime('%H:%M:%S,', time.gmtime(end_time)) + f"{int((end_time % 1) * 1000):03d}"
+                
+                # Write SRT entry
+                f.write(f"{i}\n")
+                f.write(f"{start_srt} --> {end_srt}\n")
+                f.write(f"{section['text']}\n\n")
+    
+    perf_end_time = time.time()
+    
+    spinner.succeed(f"Done in {(perf_end_time - perf_start_time):.2f} seconds.")
 
 
 main()
