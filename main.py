@@ -21,7 +21,7 @@ parser.add_argument(
 parser.add_argument(
     "-o",
     "--output",
-    help="The path to an output directory to write JSON and SRT files to.",
+    help="The path to a folder to write JSON and SRT files to.",
     required=True,
 )
 parser.add_argument(

@@ -61,7 +61,7 @@ The script will output a JSON and a SRT file in the output directory for each au
 ### Arguments
 
 - `-i, --input` (required): The path to a folder containing audio and text files.
-- `-o, --output` (required): The path to a JSON file to write the timestamps to.
+- `-o, --output` (required): The path to a folder to write JSON and SRT files to.
 - `-s, --separator` (optional): The location to timestamp within a text file. Options are `lineBreak`, `leftBracket` ([), or `downArrow` (⬇️). Default is `lineBreak`.
 - `-l, --language` (optional): The language of the text and audio files. If not provided, the app will automatically detect the language using MMS's lid API.
 - `-m, --max-silence-padding-ms` (optional): The maximum amount of silence padding (in ms) to offset the start and end timestamps of each text span. Default is -1 (equally distribute silence). 0 will remove all silence. 500 (for example) will add up to 500ms of silence to the start and end of each text span.
